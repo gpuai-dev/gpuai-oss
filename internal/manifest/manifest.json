@@ -1,0 +1,499 @@
+{
+  "schema_version": 1,
+  "toolkit_driver_floors": {
+    "12.4": "550.54.14",
+    "12.6": "560.28.03",
+    "12.8": "570.26",
+    "12.9": "575.51.03",
+    "13.0": "580.65.06"
+  },
+  "framework_images": {
+    "pytorch": {
+      "cuda128": "ghcr.io/gpuai-dev/pytorch-cuda128:2026-07@sha256:661e0a3dabcd975682138aee11f1228ad6c9aa30e8fc76a24eabe4d859ae47ec",
+      "cuda124": "ghcr.io/gpuai-dev/pytorch-cuda124:2026-07@sha256:69ec69aeb00293fb38dc924d8efcbf01303aa5fe045c723087d9ced3ea68b677"
+    },
+    "cuda-devel": {
+      "cuda128": "ghcr.io/gpuai-dev/cuda-devel-cuda128:2026-07@sha256:4cc39f2a72199f86af8627de94f79158df07195fc6e95dcf7ead595cc2663cbf",
+      "cuda124": "ghcr.io/gpuai-dev/cuda-devel-cuda124:2026-07@sha256:13674fde77af7a421c5f51deadcbc2abe5b781643cd571207757992c234cc175"
+    },
+    "jupyter": {
+      "cuda128": "ghcr.io/gpuai-dev/jupyter-cuda128:2026-07@sha256:a9f5d1cecf78d18869d2154257587a3c935ce4378f3ea04f1ea399a1013f9674",
+      "cuda124": "ghcr.io/gpuai-dev/jupyter-cuda124:2026-07@sha256:d09e60c48ec8da1293a36cf83b1bd7fd0ce2943be54dc8d94df00350d1560d92"
+    }
+  },
+  "framework_includes": {
+    "base": {
+      "cuda128": [
+        {
+          "name": "CUDA Runtime",
+          "version": "12.8.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ],
+      "cuda124": [
+        {
+          "name": "CUDA Runtime",
+          "version": "12.4.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ]
+    },
+    "pytorch": {
+      "cuda128": [
+        {
+          "name": "PyTorch",
+          "version": "2.11.0"
+        },
+        {
+          "name": "TorchVision",
+          "version": "0.26.0"
+        },
+        {
+          "name": "cuDNN",
+          "version": "9.19.0.56"
+        },
+        {
+          "name": "Triton",
+          "version": "3.6.0"
+        },
+        {
+          "name": "NumPy",
+          "version": "2.2.6"
+        },
+        {
+          "name": "JupyterLab",
+          "version": "4.6.1"
+        },
+        {
+          "name": "CUDA Runtime",
+          "version": "12.8.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ],
+      "cuda124": [
+        {
+          "name": "PyTorch",
+          "version": "2.13.0"
+        },
+        {
+          "name": "TorchVision",
+          "version": "0.28.0"
+        },
+        {
+          "name": "cuDNN",
+          "version": "9.10.2.21"
+        },
+        {
+          "name": "Triton",
+          "version": "3.7.1"
+        },
+        {
+          "name": "NumPy",
+          "version": "2.2.6"
+        },
+        {
+          "name": "JupyterLab",
+          "version": "4.6.1"
+        },
+        {
+          "name": "CUDA Runtime",
+          "version": "12.4.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ]
+    },
+    "cuda-devel": {
+      "cuda128": [
+        {
+          "name": "CUDA Toolkit (nvcc, headers)",
+          "version": "12.8.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ],
+      "cuda124": [
+        {
+          "name": "CUDA Toolkit (nvcc, headers)",
+          "version": "12.4.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ]
+    },
+    "jupyter": {
+      "cuda128": [
+        {
+          "name": "JupyterLab",
+          "version": "4.6.1"
+        },
+        {
+          "name": "IPyKernel",
+          "version": "7.3.0"
+        },
+        {
+          "name": "CUDA Runtime",
+          "version": "12.8.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ],
+      "cuda124": [
+        {
+          "name": "JupyterLab",
+          "version": "4.6.1"
+        },
+        {
+          "name": "IPyKernel",
+          "version": "7.3.0"
+        },
+        {
+          "name": "CUDA Runtime",
+          "version": "12.4.1"
+        },
+        {
+          "name": "Python",
+          "version": "3.10"
+        },
+        {
+          "name": "Ubuntu",
+          "version": "22.04"
+        },
+        {
+          "name": "git"
+        },
+        {
+          "name": "OpenSSH (key-only)"
+        }
+      ]
+    }
+  },
+  "gpus": {
+    "B200": {
+      "gpu_model": "B200",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "B300": {
+      "gpu_model": "B300",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "H200 SXM": {
+      "gpu_model": "H200 SXM",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "H200 NVL": {
+      "gpu_model": "H200 NVL",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "H100 SXM": {
+      "gpu_model": "H100 SXM",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "H100 NVL": {
+      "gpu_model": "H100 NVL",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "H100 PCIe": {
+      "gpu_model": "H100 PCIe",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "A100 80GB": {
+      "gpu_model": "A100 80GB",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "A100 40GB": {
+      "gpu_model": "A100 40GB",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "A40": {
+      "gpu_model": "A40",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "A30": {
+      "gpu_model": "A30",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "A16": {
+      "gpu_model": "A16",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "L40S": {
+      "gpu_model": "L40S",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "L40": {
+      "gpu_model": "L40",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "L4": {
+      "gpu_model": "L4",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 6000 Ada": {
+      "gpu_model": "RTX 6000 Ada",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 5000 Ada": {
+      "gpu_model": "RTX 5000 Ada",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 4000 Ada": {
+      "gpu_model": "RTX 4000 Ada",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 2000 Ada": {
+      "gpu_model": "RTX 2000 Ada",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX A6000": {
+      "gpu_model": "RTX A6000",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX A5000": {
+      "gpu_model": "RTX A5000",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX A4500": {
+      "gpu_model": "RTX A4500",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX A4000": {
+      "gpu_model": "RTX A4000",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX PRO 6000": {
+      "gpu_model": "RTX PRO 6000",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "RTX PRO 4500": {
+      "gpu_model": "RTX PRO 4500",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "RTX 5090": {
+      "gpu_model": "RTX 5090",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "RTX 5080": {
+      "gpu_model": "RTX 5080",
+      "driver_floor": "570.26",
+      "cuda_min": "12.8",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda128:2026-09@sha256:9cbf15cde8762957249dd8fa4099d055ace8a6c1077c72012d490ee5d578de61"
+    },
+    "RTX 4090": {
+      "gpu_model": "RTX 4090",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 4080": {
+      "gpu_model": "RTX 4080",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 3090": {
+      "gpu_model": "RTX 3090",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "RTX 3080": {
+      "gpu_model": "RTX 3080",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "T4": {
+      "gpu_model": "T4",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    },
+    "V100": {
+      "gpu_model": "V100",
+      "driver_floor": "550.54.14",
+      "cuda_min": "12.4",
+      "image_ref": "ghcr.io/gpuai-dev/base-cuda124:2026-09@sha256:0a6bcd2dcb58966b2927ba3c624f960fb981d4e12cd243004efd7b8f8c613128"
+    }
+  },
+  "framework_versions": {
+    "pytorch": [
+      {
+        "id": "2.11",
+        "label": "PyTorch 2.11",
+        "variant": "cuda128",
+        "default": true
+      },
+      {
+        "id": "2.13",
+        "label": "PyTorch 2.13",
+        "variant": "cuda124"
+      }
+    ],
+    "jupyter": [
+      {
+        "id": "cuda12.8",
+        "label": "JupyterLab 4.6.1",
+        "variant": "cuda128",
+        "default": true
+      },
+      {
+        "id": "cuda12.4",
+        "label": "JupyterLab 4.6.1",
+        "variant": "cuda124"
+      }
+    ],
+    "cuda-devel": [
+      {
+        "id": "12.8",
+        "label": "CUDA Toolkit 12.8",
+        "variant": "cuda128",
+        "default": true
+      },
+      {
+        "id": "12.4",
+        "label": "CUDA Toolkit 12.4",
+        "variant": "cuda124"
+      }
+    ]
+  }
+}

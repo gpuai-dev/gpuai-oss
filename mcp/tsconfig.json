@@ -1,0 +1,22 @@
+{
+  // CJS output on a Node 22 floor, matching @gpuai/sdk's CJS-primary
+  // distribution. node16 module/moduleResolution (with no "type" field in
+  // package.json) emits CommonJS while still honouring the "exports" maps
+  // that @modelcontextprotocol/sdk publishes its subpaths under.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "node16",
+    "moduleResolution": "node16",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

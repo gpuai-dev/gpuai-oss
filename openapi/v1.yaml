@@ -1,0 +1,1260 @@
+openapi: 3.1.0
+info:
+  title: GPU.ai Open Source API
+  version: "1.0.0"
+  description: |
+    The HTTP API served by a self-hosted GPU.ai Open Source server (`gpuctl`).
+    It provisions GPU instances from the suppliers the operator has
+    configured, tracks their lifecycle, and manages the SSH keys and registry
+    credentials used at launch.
+
+    Authenticate with `Authorization: Bearer <api key>`. Keys are created on
+    the server with `gpuctl apikey create --name <name>`.
+
+    The server URL below is the default for a local deployment. Point clients
+    at wherever your gpuctl server listens; the CLI, SDKs and MCP server all
+    take the base URL as configuration.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: http://localhost:8080/v1
+    description: >-
+      Local gpuctl server on its default port. Replace with your deployment's
+      URL; every client takes the base URL as configuration.
+security:
+  - bearerAuth: []
+tags:
+  - name: Meta
+    description: >-
+      Service metadata: the liveness probe and the machine-readable OpenAPI
+      specification. No authentication required.
+  - name: GpuTypes
+    description: >-
+      The GPU hardware catalog: every GPU type available from the configured
+      suppliers. No authentication required.
+  - name: Pricing
+    description: >-
+      Live offers per GPU type, GPU count, region, and tier, with current
+      availability. No authentication required.
+  - name: Environments
+    description: >-
+      The launch environment catalog: certified frameworks, selectable
+      versions, "What's included" software lists, and the raw-VM OS images
+      accepted by instance launch. No authentication required.
+  - name: Instances
+    description: >-
+      GPU instances: launch, list, inspect, update, and terminate. Mutating
+      calls return an async operation to poll for completion.
+  - name: Operations
+    description: >-
+      Async operation tracking. Instance launches and terminations return an
+      operation id; poll it here until the operation reaches a terminal state.
+  - name: SshKeys
+    description: >-
+      SSH public keys registered with your organization for instance access.
+  - name: RegistryCredentials
+    description: >-
+      Stored private-registry logins used to pull private custom images.
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: getHealth
+      tags: [Meta]
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /openapi.json:
+    get:
+      summary: OpenAPI 3.1 specification
+      operationId: getOpenApiSpec
+      tags: [Meta]
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /gpu-types:
+    get:
+      summary: List available GPU types (no auth required)
+      operationId: listGpuTypes
+      tags: [GpuTypes]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/GPUTypePage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /pricing:
+    get:
+      summary: List pricing per GPU type + region (no auth required)
+      description: >-
+        Lists every distinct offer (gpu_type, gpu_count, region, tier, price,
+        boot class). Customer-identical offers are merged with availability
+        summed. Offers with zero availability are omitted unless
+        include_unavailable=true.
+      operationId: listPricing
+      tags: [Pricing]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: gpu_type
+          in: query
+          schema:
+            type: string
+          description: Exact-match filter on gpu_type
+        - name: region
+          in: query
+          schema:
+            type: string
+          description: Exact-match filter on canonical region code
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [spot, on_demand]
+            x-gpuai-deprecated-enum-values: [spot]
+          description: >-
+            Exact-match filter on tier. `spot` is soft-deprecated: suppliers may not offer spot capacity, in which case tier=spot returns no offerings; use on_demand.
+        - name: include_unavailable
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include offers whose current availability is zero
+      responses:
+        "200":
+          $ref: '#/components/responses/PricingPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /environments:
+    get:
+      summary: List launch environments (no auth required)
+      description: >-
+        The server-controlled launch environment catalog — the certified
+        framework roster, the selectable version(s) per framework (the version
+        picker), the "What's included" software lists, and the raw-VM OS catalog.
+        These are exactly the values accepted by the `environment` field of
+        POST /v1/instances.
+      operationId: getEnvironments
+      tags: [Environments]
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Environments'
+        default:
+          $ref: '#/components/responses/Problem'
+  /instances:
+    get:
+      summary: List instances
+      description: >-
+        Lists the organization's instances. By default terminated instances
+        are excluded; pass status=terminated for the history or status=all
+        for everything.
+      operationId: listInstances
+      tags: [Instances]
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [allocating, starting, running, stopping, stopped, terminated, error, all]
+          description: >-
+            Filter by status (default = all non-terminated). There is no
+            "unreachable" filter value: an unreachable instance is a running
+            instance whose SSH path is down, so it is listed under
+            status=running and reads "unreachable" in the response body.
+      responses:
+        "200":
+          $ref: '#/components/responses/InstancePage'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      summary: Create an instance (async — returns 202 + Operation-Id header)
+      operationId: createInstance
+      tags: [Instances]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateInstance'
+      responses:
+        "202":
+          description: Accepted; long-running operation
+          headers:
+            Operation-Id:
+              schema:
+                type: string
+              description: Use GET /operations/{id} to poll
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Operation'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /instances/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an instance
+      operationId: getInstance
+      tags: [Instances]
+      parameters:
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [credentials]
+          description: >-
+            Opt-in expansion. `credentials` restores connection.app_password
+            on this single-instance read — the only surface that returns the
+            web-console basic-auth password. Omitted by default so bare reads
+            can be logged without leaking the secret. Any other value is a
+            400 validation_failed. The list endpoint and operation reads
+            never return the password, with or without this parameter.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      summary: Update an instance (rename only in v1)
+      operationId: updateInstance
+      tags: [Instances]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      summary: Terminate an instance (idempotent)
+      description: >-
+        Members can terminate only instances they created; organization
+        admins can terminate any instance in the organization. A self-hosted
+        deployment's API keys belong to the default organization's admin.
+      operationId: deleteInstance
+      tags: [Instances]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        "202":
+          description: Accepted; termination in progress
+          headers:
+            Operation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Operation'
+        "403":
+          description: Forbidden — members can only terminate instances they created
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "404":
+          description: Already gone (idempotent terminate)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /operations/{id}:
+    get:
+      summary: Get an async operation status
+      operationId: getOperation
+      tags: [Operations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Operation'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /registry-credentials:
+    get:
+      summary: List registry credentials
+      description: >-
+        Lists the organization's stored private-registry logins for
+        custom-image launches. Passwords are never returned by any read.
+        503 when the feature is not enabled on this server.
+      operationId: listRegistryCredentials
+      tags: [RegistryCredentials]
+      responses:
+        "200":
+          description: Credential list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegistryCredential'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      summary: Store a registry credential
+      description: >-
+        Stores a private-registry login for pulling private custom images. The
+        password crosses the wire exactly once — here — and is encrypted at
+        rest; no read ever returns it. Reference the returned id from
+        `registry_credential_id` on instance creation. The credential's
+        registry host must obey the same rules as image references (no
+        localhost/private addresses); username and password must not contain
+        whitespace. Duplicate names return 409 `name_taken`.
+      operationId: createRegistryCredential
+      tags: [RegistryCredentials]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, registry, username, password]
+              properties:
+                name:
+                  type: string
+                  description: Org-unique handle (at most 64 characters).
+                  example: ghcr-acme
+                registry:
+                  type: string
+                  description: Registry host the login belongs to.
+                  example: ghcr.io
+                username:
+                  type: string
+                password:
+                  type: string
+                  description: Registry password or access token. Write-only.
+      responses:
+        "201":
+          description: Credential stored (metadata only; no password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistryCredential'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /registry-credentials/{id}:
+    delete:
+      summary: Delete a registry credential
+      operationId: deleteRegistryCredential
+      tags: [RegistryCredentials]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /ssh-keys:
+    get:
+      summary: List SSH keys
+      description: >-
+        Returns the SSH keys owned by the user the API key belongs to.
+      operationId: listSshKeys
+      tags: [SshKeys]
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/SSHKeyPage'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      summary: Create an SSH key
+      operationId: createSshKey
+      tags: [SshKeys]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, public_key]
+              properties:
+                name:
+                  type: string
+                public_key:
+                  type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKey'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+  /ssh-keys/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an SSH key
+      operationId: getSshKey
+      tags: [SshKeys]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKey'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      summary: Delete an SSH key (idempotent; 404 when already gone)
+      operationId: deleteSshKey
+      tags: [SshKeys]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Already deleted (idempotent)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key created with `gpuctl apikey create`.
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      schema:
+        type: string
+        maxLength: 255
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, code, request_id]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          enum:
+            - unauthenticated
+            - invalid_api_key
+            - insufficient_scope
+            - not_found
+            - idempotency_conflict
+            - idempotency_mismatch
+            - validation_failed
+            - invalid_gpu_type
+            - disk_unavailable
+            - disk_exceeds_offering
+            - price_changed
+            - quota_exceeded
+            - rate_limited
+            - internal_error
+            - operation_failed
+        request_id:
+          type: string
+    Operation:
+      type: object
+      required: [operation_id, kind, state, created_at]
+      properties:
+        operation_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [instance.create, instance.delete]
+        state:
+          type: string
+          enum: [pending, in_progress, succeeded, failed, cancelled]
+        resource_id:
+          type: string
+          nullable: true
+        error:
+          type: object
+          nullable: true
+          properties:
+            code:
+              type: string
+            detail:
+              type: string
+        result:
+          type: object
+          description: Terminal-success payload. Carries the per-instance web-access coordinates when the deployment serves them (app_url for an instance with a primary http port, terminal_url for instances provisioned with the browser web console) and the basic-auth username shared by both. Both need the optional tunnel; a deployment without it omits them. The basic-auth PASSWORD is never included here — retrieve it via GET /instances/{id}?include=credentials (connection.app_password).
+          properties:
+            app_url: { type: string }
+            terminal_url: { type: string }
+            app_basic_auth_user: { type: string }
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        warnings:
+          type: array
+          items: { type: string }
+          description: >-
+            Create-time advisories, present only on the synchronous 202 from
+            POST /instances (never on GET /operations/{id} polls).
+    Instance:
+      type: object
+      required: [id, status, gpu_type, gpu_count, region, tier, price_per_hour, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [allocating, starting, running, stopping, stopped, terminated, unreachable, error]
+          description: >-
+            Lifecycle status. "allocating" = the GPU is still being acquired
+            from the supplier (slow-boot capacity such as bare metal can take
+            ~15 min); "starting" = the node exists and is booting; "running" =
+            ready to use. "unreachable" = the platform's probe has confirmed
+            the SSH path is down while the machine may still be up: the
+            instance is NOT usable right now, and it either recovers to
+            "running" on its own or is failed after a grace window. It is a
+            degraded reading of a running instance, not a separate lifecycle
+            state; see unreachable_since.
+        gpu_type:
+          type: string
+        gpu_count:
+          type: integer
+          minimum: 1
+          maximum: 8
+        region:
+          type: string
+        tier:
+          type: string
+          enum: [spot, on_demand]
+          x-gpuai-deprecated-enum-values: [spot]
+          description: >-
+            `spot` is soft-deprecated: suppliers may not offer spot capacity, in which case tier=spot returns no offerings; use on_demand.
+        price_per_hour:
+          type: number
+          format: double
+          description: hourly rate for the whole instance — covers all gpu_count GPUs
+        connection:
+          type: object
+          nullable: true
+          properties:
+            hostname:
+              type: string
+            port:
+              type: integer
+            ssh_command:
+              type: string
+            app_url:
+              type: string
+              description: HTTPS URL of the instance's primary http port, e.g. https://gpu-abcd1234.apps.example.com. Present only when the deployment runs the optional tunnel.
+            app_user:
+              type: string
+              description: HTTP Basic Auth username for app_url and terminal_url. Present when app_url or terminal_url is.
+            app_password:
+              type: string
+              description: HTTP Basic Auth password for app_url and terminal_url. Treat as a secret. OMITTED by default from all reads — returned only on GET /instances/{id}?include=credentials (same persistence availability as app_user); the list endpoint and operation results never include it.
+            terminal_url:
+              type: string
+              description: HTTPS URL of the browser web console (a shell on the instance, no SSH key required), e.g. https://gpu-abcd1234-term.apps.example.com. Guarded by the same app_user/app_password login. Present only on running instances provisioned with the console, which needs the optional tunnel.
+        disk_gb:
+          type: integer
+          description: >-
+            Instance filesystem size in GB that the platform configured for
+            this launch. Present only where the placed capacity honors a
+            configured disk size; absent means the machine's disk is
+            supplier-determined (its own flavor volume).
+        image:
+          type: string
+          description: >-
+            The customer-supplied container image this instance was launched
+            from, digest-pinned at verification time (e.g.
+            `ghcr.io/acme/trainer:v1@sha256:…`). Present only on custom-image
+            launches; certified launches never expose their images here.
+        auto_terminate_hours:
+          type: integer
+          description: >-
+            The runtime limit this instance was launched with, in hours (the
+            `auto_terminate_hours` you sent). Absent means the instance runs
+            until something stops it. It stays present after the limit has
+            fired, so a terminated instance still explains itself.
+          example: 8
+        auto_terminate_at:
+          type: string
+          format: date-time
+          description: >-
+            When the runtime limit expires and the platform terminates this
+            instance. Computed when the instance became running (ready_at +
+            auto_terminate_hours), so the countdown covers usable runtime, not
+            the time spent provisioning. Absent when no limit was set, when the
+            instance is not running yet, or once the platform has begun acting
+            on an elapsed limit.
+        status_reason:
+          type: string
+          description: >-
+            Why the instance stopped or failed, e.g. "provisioning stalled: the
+            instance started but never became reachable", or — when a runtime
+            limit fired — "Terminated: this instance reached the 8-hour runtime
+            limit set at launch". Present only when the platform has something
+            to explain.
+        created_at:
+          type: string
+          format: date-time
+        ready_at:
+          type: string
+          format: date-time
+          nullable: true
+        terminated_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_reachable_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            Last time the platform verified the SSH path to this instance
+            end-to-end. Absent means the instance has not been probed yet
+            (freshly launched, or no probe configured); it does NOT mean
+            unreachable. An instance whose status is still "running" while this
+            timestamp stops advancing is one whose SSH has died even though the
+            machine is up.
+        unreachable_since:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            Start of the confirmed SSH outage the instance is currently in.
+            Present exactly when status is "unreachable", absent otherwise.
+    GPUType:
+      type: object
+      required: [gpu_type, vram_gb]
+      properties:
+        gpu_type:
+          type: string
+        vram_gb:
+          type: integer
+        cpu_cores:
+          type: integer
+          description: >-
+            Representative host vCPU count for this GPU model. Unlike vram_gb
+            (the card's nameplate VRAM; a model spanning capacity variants
+            advertises the smallest currently offered, so it is the value
+            every launch of the model can honor) this varies per offering, so
+            it is the first-sighting/typical value; GET /v1/pricing carries
+            the exact per-offering spec. 0 marks a spec the upstream did not
+            report.
+        ram_gb:
+          type: integer
+          description: Representative host RAM (GB) for this GPU model; varies per offering — see cpu_cores. 0 marks an unreported spec.
+        storage_gb:
+          type: integer
+          description: Representative host storage (GB) for this GPU model; varies per offering — see cpu_cores. 0 marks an unreported spec.
+        instance_disk_gb:
+          type: integer
+          description: >-
+            Representative instance filesystem size (GB) a launch of this model
+            receives — the platform default where the upstream honors a
+            configured size, otherwise the machine's reported disk; varies per
+            offering — see cpu_cores. 0 marks an unreported disk (unknown, not
+            zero). GET /v1/pricing carries the exact per-offering value.
+        disk_configurable:
+          type: boolean
+          description: >-
+            true when at least one offering of this model accepts a custom
+            disk_gb at launch (an OR across offerings — requesting disk_gb
+            narrows placement to the capable capacity).
+        architecture:
+          type: string
+    Pricing:
+      type: object
+      required: [gpu_type, gpu_count, region, tier, price_per_hour, available, instant_boot, community]
+      properties:
+        gpu_type:
+          type: string
+        gpu_count:
+          type: integer
+          description: number of GPUs in the listed configuration
+        cpu_cores:
+          type: integer
+          description: host vCPU count for this offering, tied to the shown (cheapest) price. 0 marks an unreported spec.
+        ram_gb:
+          type: integer
+          description: host RAM (GB) for this offering, tied to the shown price. 0 marks an unreported spec.
+        storage_gb:
+          type: integer
+          description: host storage (GB) for this offering, tied to the shown price. 0 marks an unreported spec.
+        region:
+          type: string
+        tier:
+          type: string
+          enum: [spot, on_demand]
+          x-gpuai-deprecated-enum-values: [spot]
+          description: >-
+            `spot` is soft-deprecated: suppliers may not offer spot capacity, in which case tier=spot returns no offerings; use on_demand.
+        price_per_hour:
+          type: number
+          format: double
+          description: hourly price for the whole listed configuration — covers all gpu_count GPUs
+        available:
+          type: integer
+          description: count of available units, summed across merged identical offers
+        instant_boot:
+          type: boolean
+          description: true when instances of this offering are typically reachable within about a minute of launch; false for capacity with longer provisioning times (~3-5 minutes)
+        community:
+          type: boolean
+          description: true when this offering is supplier/peer-hosted capacity with a softer SLA (see capacity_class)
+        instance_disk_gb:
+          type: integer
+          description: >-
+            Instance filesystem size (GB) a launch of THIS offering receives —
+            the platform default where the upstream honors a configured size,
+            otherwise the machine's own reported disk; tied to the shown
+            (cheapest) price like cpu_cores. 0 marks an unreported disk
+            (unknown, not zero).
+        disk_configurable:
+          type: boolean
+          description: >-
+            true when a launch of this offering may choose its own disk size via
+            the create request's disk_gb. A distinguishing field in the offer
+            merge — configurable and fixed-disk capacity for the same SKU stay
+            separate rows.
+        disk_price_per_gb_hour:
+          type: number
+          format: double
+          description: >-
+            Price of one GB of instance disk beyond instance_disk_gb, per
+            hour, for launches of this offering. A launch requesting disk_gb
+            above instance_disk_gb is priced approximately price_per_hour +
+            (disk_gb − instance_disk_gb) × disk_price_per_gb_hour (the exact
+            rate folds disk into one cent-rounded hourly price). 0 when the offering is not
+            disk-configurable, or when disk above the included allowance is
+            currently free.
+        capacity_class:
+          type: string
+          enum: [secure, community, ""]
+          description: >-
+            per-offering capacity classification — "secure" for
+            datacenter-operated hardware, "community" for supplier/peer-hosted
+            hardware with a softer SLA. The string twin of `community`,
+            classified per offering. May transiently be empty for cache
+            entries written before the field existed.
+    Environments:
+      type: object
+      description: The launch environment catalog (GET /v1/environments).
+      required: [frameworks, versions, includes, vm_images]
+      properties:
+        frameworks:
+          type: array
+          description: Certified framework ids whose images are fully published — the `certified:<framework>` options.
+          items:
+            type: string
+          example: [pytorch, cuda-devel, jupyter]
+        versions:
+          type: object
+          description: >-
+            The version picker roster: framework id → selectable versions (the
+            `certified:<framework>@<version>` grammar). A framework absent here
+            has one build per CUDA variant. `variant` is the CUDA variant a
+            version targets — only offerings whose GPU maps to it can run it.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/FrameworkVersion'
+        includes:
+          type: object
+          description: >-
+            "What's included" software lists: framework id (roster ids plus
+            "base") → CUDA variant ("cuda128"/"cuda124") → components.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                $ref: '#/components/schemas/IncludeItem'
+        vm_images:
+          type: object
+          description: The raw-VM OS catalog (the `raw_vm:<os>` grammar), keyed by os id.
+          additionalProperties:
+            $ref: '#/components/schemas/VMImage'
+    FrameworkVersion:
+      type: object
+      required: [id, label, variant]
+      properties:
+        id:
+          type: string
+          description: The version token used in `certified:<framework>@<id>`.
+          example: "2.13"
+        label:
+          type: string
+          example: PyTorch 2.13
+        variant:
+          type: string
+          description: CUDA variant this version targets (cuda128/cuda124).
+          example: cuda124
+        default:
+          type: boolean
+          description: Preselected in the picker (at most one per framework).
+    IncludeItem:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: PyTorch
+        version:
+          type: string
+          description: Resolved build version; absent for unpinned components (e.g. git).
+          example: "2.13.0"
+    VMImage:
+      type: object
+      required: [label, family, version]
+      properties:
+        label:
+          type: string
+          example: Ubuntu 24.04 LTS
+        family:
+          type: string
+          example: ubuntu
+        version:
+          type: string
+          example: "24.04"
+        driver_preinstalled:
+          type: boolean
+          description: true when the image ships the NVIDIA driver + CUDA baked in.
+    RegistryCredential:
+      type: object
+      description: A stored private-registry login (metadata only — the password is write-only and encrypted at rest).
+      properties:
+        id: { type: string }
+        name: { type: string, example: ghcr-acme }
+        registry: { type: string, example: ghcr.io }
+        username: { type: string }
+        created_at: { type: string, format: date-time }
+    SSHKey:
+      type: object
+      required: [id, name, fingerprint, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fingerprint:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    InstancePage:
+      type: object
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Instance'
+        next_cursor:
+          # Opaque cursor for the next page, or null when there are no more
+          # pages (Page[T].NextCursor is *string emitting `"..."|null`). This
+          # spec is OpenAPI 3.1: `nullable: true` is a dead keyword there, so
+          # null-ness MUST be expressed as a type union or generated clients
+          # reject the null at deserialization.
+          type: [string, 'null']
+    SSHKeyPage:
+      type: object
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SSHKey'
+        next_cursor:
+          # Opaque cursor for the next page, or null when there are no more
+          # pages (Page[T].NextCursor is *string emitting `"..."|null`). This
+          # spec is OpenAPI 3.1: `nullable: true` is a dead keyword there, so
+          # null-ness MUST be expressed as a type union or generated clients
+          # reject the null at deserialization.
+          type: [string, 'null']
+    GPUTypePage:
+      type: object
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GPUType'
+        next_cursor:
+          # Opaque cursor for the next page, or null when there are no more
+          # pages (Page[T].NextCursor is *string emitting `"..."|null`). This
+          # spec is OpenAPI 3.1: `nullable: true` is a dead keyword there, so
+          # null-ness MUST be expressed as a type union or generated clients
+          # reject the null at deserialization.
+          type: [string, 'null']
+    PricingPage:
+      type: object
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pricing'
+        next_cursor:
+          # Opaque cursor for the next page, or null when there are no more
+          # pages (Page[T].NextCursor is *string emitting `"..."|null`). This
+          # spec is OpenAPI 3.1: `nullable: true` is a dead keyword there, so
+          # null-ness MUST be expressed as a type union or generated clients
+          # reject the null at deserialization.
+          type: [string, 'null']
+  requestBodies:
+    CreateInstance:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [gpu_type, gpu_count, tier]
+            properties:
+              gpu_type:
+                type: string
+              gpu_count:
+                type: integer
+                minimum: 1
+                maximum: 8
+              region:
+                type: string
+              tier:
+                type: string
+                enum: [spot, on_demand]
+                x-gpuai-deprecated-enum-values: [spot]
+                description: >-
+                  `spot` is soft-deprecated: suppliers may not offer spot capacity, in which case tier=spot returns no offerings; use on_demand.
+              ssh_key_ids:
+                type: array
+                items:
+                  type: string
+              name:
+                type: string
+              max_price_per_hour:
+                type: number
+                format: double
+                description: maximum acceptable whole-instance hourly price (catalog price)
+              viewed_price_per_hour:
+                type: number
+                format: double
+                description: >-
+                  The retail $/hr the caller displayed to the user before
+                  launch. A catalog row is a quote, not a booking, and pinning
+                  an offering fixes which machine is placed but not its rate.
+                  If the launch-time price exceeds this by more than $0.01 the
+                  launch fails with `price_changed` carrying the new price
+                  instead of proceeding at the higher price; omit to accept the
+                  launch-time price (previous behavior). Refusal only — it is
+                  never read as consent, so it can neither raise what you are
+                  paid nor widen what may be launched on your behalf. Use
+                  max_price_per_hour to bound the price.
+              environment:
+                type: string
+                description: >-
+                  Launch environment. Omit for the supplier default (the
+                  certified image where supported). Accepted values: `certified`
+                  (the certified base image), `certified:<framework>` (a
+                  framework layer — see GET /v1/environments for the roster, e.g.
+                  `certified:pytorch`), `certified:<framework>@<version>` (a
+                  specific framework version, e.g. `certified:pytorch@2.13`),
+                  `raw_vm` (root VM, supplier default OS), `raw_vm:<os>` (root VM
+                  with a chosen OS, e.g. `raw_vm:ubuntu-24.04`), or
+                  `provider_template` (the supplier's own image). A well-formed
+                  value the placed machine can't serve returns 422
+                  `environment_unavailable`.
+                example: certified:pytorch@2.13
+              offering_id:
+                type: string
+                description: >-
+                  Pin the launch to one exact offering (from GET /v1/pricing) so
+                  the engine never substitutes a pricier one. If that offering is
+                  gone, the launch fails explicitly rather than silently placing
+                  elsewhere.
+              disk_gb:
+                type: integer
+                minimum: 10
+                description: >-
+                  Requested instance filesystem size in GB. Omit for the
+                  platform default (100 GB), which never narrows placement.
+                  Setting it is a hard requirement: placement narrows to
+                  capacity that can honor it (see `disk_configurable` on GET
+                  /v1/pricing), and a request no offering of the gpu_type can
+                  honor returns 422 `disk_unavailable` rather than launching
+                  with a different size. When the launch also pins an exact
+                  `offering_id`, a disk_gb larger than that offering's
+                  displayed `storage_gb` returns 422 `disk_exceeds_offering`
+                  rather than launching with a clamped filesystem. Disk beyond the included allowance
+                  (100 GB) is priced at the offering's
+                  `disk_price_per_gb_hour` (GET /v1/pricing), folded into the
+                  instance's single hourly rate. Bounds: at least 10, at most
+                  the platform ceiling (currently 1000) — outside them returns
+                  422 `validation_failed`.
+                example: 200
+              auto_terminate_hours:
+                type: integer
+                minimum: 1
+                maximum: 720
+                description: >-
+                  Terminate this instance automatically after this many hours of
+                  runtime. Omit for no limit (the default). The countdown starts
+                  when the instance reaches `running`, not when you call this —
+                  provisioning is not counted against the limit —
+                  and the resolved deadline is returned as `auto_terminate_at`
+                  on every read.
+                  Enforcement is server-side and survives your process: this is
+                  the safety net for an unattended run whose client dies without
+                  cleaning up. When it fires the instance is terminated exactly
+                  as a DELETE would terminate it and `status_reason` records
+                  that the limit was reached.
+                  Bounds: at least 1, at most 720 (30 days) — outside them
+                  returns 422 `validation_failed`. An explicit `0` is rejected
+                  rather than read as "no limit"; omit the field for that.
+                example: 8
+              env:
+                type: object
+                additionalProperties:
+                  type: string
+                description: >-
+                  Environment variables for an `image` launch: plain container
+                  env vars. Keys must be POSIX names and the platform's reserved
+                  namespace (`PUBLIC_KEY`, `GPUAI_*`) is refused (422).
+              image:
+                type: string
+                description: >-
+                  Launch from your own container image, e.g.
+                  `pytorch/pytorch:2.4.1-cuda12.4-cudnn9-devel` or
+                  `ghcr.io/acme/trainer:v1`. The image must be publicly
+                  pullable (or private, with `registry_credential_id`) and
+                  provide linux/amd64 — both are verified synchronously before
+                  anything is provisioned: an unknown image returns 422
+                  `image_unavailable` and a registry outage 502
+                  `registry_unreachable`, with no operation created. The launch is pinned to the exact manifest
+                  digest verified, so a tag re-push cannot change what boots.
+                  After SSH setup the image's own ENTRYPOINT/CMD is
+                  started (its output is in /var/log/gpuai-entrypoint.log on
+                  the instance); an image with neither is a plain SSH
+                  environment. Placement prefers container-native capacity
+                  (the image runs natively; SSH lands inside it) and falls
+                  back to VM capacity (the image runs as a container beside
+                  the host's SSH — inspect with `docker logs gpuai-workload`);
+                  private images stay container-native. A gpu_type with no
+                  capable capacity returns 422 `image_unavailable`.
+                  Mutually exclusive with `environment` (422). A malformed reference (bad
+                  charset, localhost/private-IP registry) returns 400.
+                  On-demand only for now: `tier: spot` with `image` is
+                  refused (422 `validation_failed`) because a preemption
+                  re-route cannot yet carry a custom image.
+                example: ghcr.io/acme/trainer:v1
+              registry_credential_id:
+                type: string
+                description: >-
+                  Stored registry-credential id (POST /v1/registry-credentials)
+                  for pulling a PRIVATE `image`. The credential's registry must
+                  match the image's registry (422 otherwise); wrong logins fail
+                  the pre-flight with 422 `image_unavailable` before anything is
+                  provisioned. Requires `image`.
+              entrypoint:
+                type: array
+                items: { type: string }
+                description: >-
+                  Override the image's ENTRYPOINT (docker semantics — also
+                  drops the image CMD unless `cmd` is given). Omit to use the
+                  image's own; an explicit empty array clears it while
+                  keeping the image CMD (docker `--entrypoint ""` semantics).
+                  Empty strings inside a non-empty argv are rejected (422).
+                  At most 32 arguments / 4KB. Requires `image`.
+              cmd:
+                type: array
+                items: { type: string }
+                description: >-
+                  Override the image's CMD. Omit to use the image's own (or
+                  none, when `entrypoint` is overridden with a non-empty
+                  argv; an empty-array entrypoint clear keeps the image CMD).
+                  An explicit empty array clears the CMD. Empty strings
+                  inside a non-empty argv are rejected (422). Requires
+                  `image`.
+              ports:
+                type: array
+                description: >-
+                  Container ports to expose on a custom-image launch (at most
+                  10; port 22 is reserved). At most one entry may be `primary`
+                  — it must be http and is served at the instance's app URL
+                  (`https://<id>.apps.<your-domain>`, when the optional tunnel
+                  is enabled) behind the per-instance basic-auth login. Requires `image`.
+                items:
+                  type: object
+                  required: [port, protocol]
+                  properties:
+                    port: { type: integer, minimum: 1, maximum: 65535 }
+                    protocol: { type: string, enum: [http, tcp] }
+                    primary: { type: boolean }
+  responses:
+    Problem:
+      description: Error response (RFC 7807)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    RateLimited:
+      description: Rate limit exceeded (RFC 7807). Retry-After header indicates seconds to wait.
+      headers:
+        Retry-After:
+          description: Seconds the client should wait before retrying.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InstancePage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InstancePage'
+    SSHKeyPage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SSHKeyPage'
+    GPUTypePage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GPUTypePage'
+    PricingPage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PricingPage'

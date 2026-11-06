@@ -1,0 +1,16 @@
+# Files the python generator must not write. gitignore syntax; paths are
+# relative to sdk/python.
+
+# Repo-management scripts and third-party CI definitions the generator emits.
+# They would push to a remote or run unreviewed CI if this tree were mirrored.
+git_push.sh
+.travis.yml
+.gitlab-ci.yml
+.github/workflows/python.yml
+
+# Hand-maintained: the generator's copy sets an end-of-life Python floor
+# (3.9) that contradicts its own setup.py (3.10).
+pyproject.toml
+
+# The repository root LICENSE (Apache-2.0) covers the SDKs.
+LICENSE

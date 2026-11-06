@@ -1,0 +1,12 @@
+# gitleaks configuration: the default rules plus an allowlist for the
+# clearly fake values that unit tests use as fixtures.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake credentials used as unit-test fixtures"
+regexes = [
+  '''^gpuai_live_xyz1$''',           # internal/db/api_keys_test.go key prefix
+  '''^tok_frp_test_abc123def456$''', # internal/tunnel FRP token fixture
+  '''^internal-token$''',            # internal/tunnel probe bearer fixture
+]

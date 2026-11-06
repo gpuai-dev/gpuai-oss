@@ -1,0 +1,24 @@
+{
+  // Typecheck-only config. It exists because `tsconfig.json` is the BUILD
+  // config, and the build must emit `src` and nothing else — `dist/` shipping a
+  // `test/` directory would be a packaging bug. But that left `test/` entirely
+  // unchecked by `npm run typecheck`: the test files only ever passed through
+  // vitest's transform, which strips types rather than verifying them, so a test
+  // asserting against a signature that no longer exists would still run green
+  // until someone read it.
+  //
+  // Widening the build's `include` would have fixed the checking and broken the
+  // packaging. A separate config fixes the checking and cannot touch the
+  // packaging: `npm run build` still reads `tsconfig.json`, and this file is
+  // referenced only by `npm run typecheck` / `npm run lint`.
+  //
+  // `rootDir` is relaxed to the package root because the base config pins it to
+  // `src`, and a file outside `rootDir` is an error even under `noEmit`. Nothing
+  // is emitted here, so the setting has no packaging consequence.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src", "test"]
+}

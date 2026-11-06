@@ -1,0 +1,116 @@
+# GPU.ai Open Source: local deployment.
+#
+#   cp .env.example deploy/.env             # optional; defaults work as-is
+#   docker compose -f deploy/docker-compose.yml --profile mock up -d --build
+#   docker compose -f deploy/docker-compose.yml exec gpuctl gpuctl apikey create --name admin
+#
+# Services:
+#   postgres       state (migrations apply automatically on gpuctl start)
+#   redis          live offerings cache and API rate limits
+#   gpuctl         API on http://localhost:8080 plus background workers
+#   mock-supplier  (profile "mock") a Generic Supplier API implementation that
+#                  runs each instance as a small sshd container on this
+#                  machine's Docker daemon
+#
+# Compose reads deploy/.env (next to this file) when present, both for the
+# ${...} values below and as the gpuctl environment. See .env.example. Every
+# value has a default here so `up` works without one.
+
+name: gpuai-oss
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gpuai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gpuai-local-dev}
+      POSTGRES_DB: gpuai
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gpuai -d gpuai"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  gpuctl:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.gpuctl
+    image: gpuai-oss-gpuctl:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://gpuai:${POSTGRES_PASSWORD:-gpuai-local-dev}@postgres:5432/gpuai?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GPUCTL_PORT: "8080"
+      GPUCTL_LOG_FORMAT: ${GPUCTL_LOG_FORMAT:-text}
+      # The mock supplier is reached on the compose network. Override
+      # GENERIC_SUPPLIERS in deploy/.env to point at your own suppliers.
+      GENERIC_SUPPLIERS: ${GENERIC_SUPPLIERS:-[{"slug":"mock","name":"Mock Supplier","base_url":"http://mock-supplier:8080","api_key":"mock-supplier-dev-key"}]}
+    ports:
+      - "127.0.0.1:${GPUCTL_HOST_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mock-supplier:
+    profiles: ["mock"]
+    build:
+      context: ..
+      dockerfile: examples/mock-supplier/Dockerfile
+    image: gpuai-oss-mock-supplier:local
+    environment:
+      MOCK_API_KEY: mock-supplier-dev-key
+      MOCK_RUNTIME: ${MOCK_RUNTIME:-docker}
+      MOCK_INSTANCE_IMAGE: gpuai-oss-mock-instance:local
+      # Instance containers join this network so the mock can wait for sshd
+      # before reporting them running.
+      MOCK_DOCKER_NETWORK: gpuai-oss
+      # Customers SSH to MOCK_PUBLIC_IP:<published port>.
+      MOCK_PUBLIC_IP: ${MOCK_PUBLIC_IP:-127.0.0.1}
+      MOCK_PUBLISH_IP: ${MOCK_PUBLISH_IP:-127.0.0.1}
+    ports:
+      # Exposed for inspection: GET /mock/instances lists every instance the
+      # mock created, including terminated ones.
+      - "127.0.0.1:${MOCK_HOST_PORT:-8081}:8080"
+    volumes:
+      # The mock starts and removes instance containers on this Docker daemon.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      mock-instance-image:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Builds the image the mock supplier runs per instance, then exits.
+  mock-instance-image:
+    profiles: ["mock"]
+    build:
+      context: ../examples/mock-supplier/instance
+    image: gpuai-oss-mock-instance:local
+    entrypoint: ["true"]
+    restart: "no"
+
+networks:
+  default:
+    name: gpuai-oss
+
+volumes:
+  postgres-data:

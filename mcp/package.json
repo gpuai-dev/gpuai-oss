@@ -1,0 +1,39 @@
+{
+  "name": "@gpuai/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the GPU.ai Open Source API",
+  "author": "GPU.ai Open Source contributors",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "gpuai-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:sdk": "npm --prefix ../sdk/typescript install --no-audit --no-fund && npm --prefix ../sdk/typescript run build",
+    "prebuild": "npm run build:sdk",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "lint": "tsc --noEmit -p tsconfig.typecheck.json",
+    "pretest": "npm run build:sdk",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@gpuai/sdk": "file:../sdk/typescript",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.8"
+  },
+  "private": true
+}

@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "jupyter",
+      "display_name": "JupyterLab",
+      "category": "notebooks",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/jupyter:2026-09@sha256:c3a366d6a1eb86fa9133c15574e8a5c765c542371052627b5b2e21f754ab8079",
+      "container_disk_gb": 50,
+      "min_vram_gb": 8,
+      "min_cuda": 12.8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 8888, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "JUPYTER_TOKEN", "default": "", "user_overridable": true, "secret": true },
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "A GPU notebook in your browser — JupyterLab with PyTorch, pandas, and the Hugging Face stack preinstalled. One click from launch to a live notebook.",
+      "includes": ["JupyterLab on CUDA-matched PyTorch", "pandas, matplotlib, scikit-learn, transformers, datasets", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://jupyterlab.readthedocs.io"
+    },
+    {
+      "id": "comfyui",
+      "display_name": "ComfyUI",
+      "category": "image-generation",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/comfyui:2026-09@sha256:fcf3b848efc4c62cdf1777cb4625ba5294c5f02024c62a8fa413289fb2a40ee8",
+      "container_disk_gb": 40,
+      "min_vram_gb": 16,
+      "min_cuda": 12.6,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 300,
+      "ports": [
+        { "port": 8188, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "COMFY_ARGS", "default": "--listen 0.0.0.0", "user_overridable": true, "secret": false }
+      ],
+      "start_command": "",
+      "description": "The most powerful node-based engine for Stable Diffusion & Flux \u2014 wire up image and video pipelines visually.",
+      "includes": ["ComfyUI (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.comfy.org"
+    },
+    {
+      "id": "vllm",
+      "display_name": "vLLM (OpenAI-compatible)",
+      "category": "llm-inference",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/vllm:2026-09@sha256:1f5ce0d363e7b5e08960490e0cd3ec490625727bb1d289d2714696b86a129c65",
+      "container_disk_gb": 80,
+      "min_vram_gb": 24,
+      "min_cuda": 13.0,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 8000, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "MODEL", "default": "", "user_overridable": true, "secret": false },
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "High-throughput, OpenAI-compatible inference. Serve any Hugging Face LLM with paged-attention batching.",
+      "includes": ["vLLM OpenAI-compatible server (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.vllm.ai"
+    },
+    {
+      "id": "axolotl-finetuning",
+      "display_name": "Axolotl Fine-Tuning",
+      "category": "fine-tuning",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/axolotl-finetuning:2026-09@sha256:50555d58d8a49104fe09fe89774fce6564e5c7aa07e2310093e35850f95ad23d",
+      "container_disk_gb": 100,
+      "min_vram_gb": 24,
+      "min_cuda": 12.8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 8888, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true },
+        { "key": "JUPYTER_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "Fine-tune open-source LLMs the easy way \u2014 LoRA, QLoRA, and full fine-tunes on your own models and datasets.",
+      "includes": ["Axolotl (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.axolotl.ai"
+    },
+    {
+      "id": "faster-whisper",
+      "display_name": "Faster Whisper",
+      "category": "speech-to-text",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/faster-whisper:2026-09@sha256:4a246110f3cfdc26f0930c34b488d3d54c1691750744726a0f219e871d27f8a7",
+      "container_disk_gb": 40,
+      "min_vram_gb": 8,
+      "min_cuda": 12.9,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 300,
+      "ports": [
+        { "port": 8000, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [],
+      "start_command": "",
+      "description": "Blazing-fast Whisper speech-to-text \u2014 OpenAI-compatible transcription & translation API with a built-in web UI.",
+      "includes": ["Speaches server (faster-whisper) with OpenAI-compatible speech API", "Built-in web UI", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://speaches.ai"
+    },
+    {
+      "id": "automatic1111",
+      "display_name": "Stable Diffusion WebUI (A1111)",
+      "category": "image-generation",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/automatic1111:2026-09@sha256:747793721c997dbe42e727d34ac1e24269379840989c7a3eab0c2e06853a61cd",
+      "container_disk_gb": 40,
+      "min_vram_gb": 8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 7860, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "A1111_ARGS", "default": "", "user_overridable": true, "secret": false }
+      ],
+      "start_command": "",
+      "description": "The classic Stable Diffusion WebUI \u2014 txt2img, img2img, inpainting, upscaling, and a huge extension ecosystem.",
+      "includes": ["Stable Diffusion WebUI (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki"
+    },
+    {
+      "id": "ollama",
+      "display_name": "Ollama",
+      "category": "llm-inference",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/ollama:2026-09@sha256:ef92ee9676c040f7724ff1939f6305c68e94c9da62c4202d7fe03299ec886223",
+      "container_disk_gb": 60,
+      "min_vram_gb": 8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 300,
+      "ports": [
+        { "port": 11434, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "OLLAMA_KEEP_ALIVE", "default": "", "user_overridable": true, "secret": false }
+      ],
+      "start_command": "",
+      "description": "Run open LLMs with one command \u2014 pull Llama, Gemma, Qwen and more from the model library and serve them over a simple API.",
+      "includes": ["Ollama server + model library (tracks upstream monthly)", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.ollama.com"
+    },
+    {
+      "id": "open-webui",
+      "display_name": "Open WebUI + Ollama",
+      "category": "llm-inference",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/open-webui:2026-09@sha256:09b5acdb4e1a034c305b4874c48c204fdeadda3c322dea2daa8fb2e1cb58b398",
+      "container_disk_gb": 60,
+      "min_vram_gb": 8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 300,
+      "ports": [
+        { "port": 8080, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [],
+      "start_command": "",
+      "description": "A polished, ChatGPT-style chat interface with a bundled Ollama server \u2014 pull models, chat, and RAG on your documents, fully self-hosted.",
+      "includes": ["Open WebUI (tracks upstream monthly)", "Bundled Ollama server", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.openwebui.com"
+    },
+    {
+      "id": "sglang",
+      "display_name": "SGLang",
+      "category": "llm-inference",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/sglang:2026-08@sha256:82c94b8fd7533f4bf5d180abc6f27c15cb3231832c2a0ff15090752d6c82dba4",
+      "container_disk_gb": 80,
+      "min_vram_gb": 24,
+      "min_cuda": 13.0,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 30000, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "MODEL", "default": "Qwen/Qwen2.5-7B-Instruct", "user_overridable": true, "secret": false },
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "Ultra-fast LLM serving with RadixAttention prefix caching \u2014 an OpenAI-compatible server built for high-throughput structured generation.",
+      "includes": ["SGLang OpenAI-compatible server (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://docs.sglang.ai"
+    },
+    {
+      "id": "text-generation-webui",
+      "display_name": "Text Generation WebUI",
+      "category": "llm-inference",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/text-generation-webui:2026-09@sha256:5ad62d1e94112ccef6a9a5a77c569831dc26e0cf53b8be0c72f320c6cae8b6cf",
+      "container_disk_gb": 60,
+      "min_vram_gb": 16,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 7860, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "TGW_ARGS", "default": "", "user_overridable": true, "secret": false }
+      ],
+      "start_command": "",
+      "description": "The Swiss-army knife for local LLMs \u2014 chat, notebook, and instruct modes across multiple backends, with LoRA loading and a deep extension ecosystem.",
+      "includes": ["Text Generation WebUI (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://github.com/oobabooga/text-generation-webui/wiki"
+    },
+    {
+      "id": "invokeai",
+      "display_name": "InvokeAI",
+      "category": "image-generation",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/invokeai:2026-09@sha256:05e05fbc7c9bffafd9e711898cab4cef284606957e3be570cd917f801874a765",
+      "container_disk_gb": 60,
+      "min_vram_gb": 16,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 300,
+      "ports": [
+        { "port": 9090, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "A studio-grade Stable Diffusion & FLUX workspace \u2014 unified canvas, board-based gallery, and professional inpainting/outpainting tools.",
+      "includes": ["InvokeAI studio (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://invoke-ai.github.io/InvokeAI/"
+    },
+    {
+      "id": "swarmui",
+      "display_name": "SwarmUI",
+      "category": "image-generation",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/swarmui:2026-09@sha256:38e83a6e90c5c215869f4ab67629425a2c2765d2e6bf1d7ade2acfa3e640aaae",
+      "container_disk_gb": 60,
+      "min_vram_gb": 16,
+      "min_cuda": 12.4,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 7801, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [],
+      "start_command": "",
+      "description": "A modern, modular web UI for image & video generation \u2014 FLUX, Stable Diffusion, and Wan with powerful grid tooling and a node engine underneath.",
+      "includes": ["SwarmUI (tracks upstream monthly)", "Managed ComfyUI backend (installed on first run)", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs"
+    },
+    {
+      "id": "kohya-ss",
+      "display_name": "Kohya_ss",
+      "category": "fine-tuning",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/kohya-ss:2026-09@sha256:2144658a9054a16e3485a808c129bb14796b8d942cd67ae26236aa7be224c870",
+      "container_disk_gb": 60,
+      "min_vram_gb": 24,
+      "min_cuda": 12.4,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 7860, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "The community-standard GUI for training SD & SDXL LoRAs \u2014 DreamBooth, fine-tuning, and textual inversion with deep parameter control.",
+      "includes": ["Kohya_ss GUI + sd-scripts (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://github.com/bmaltais/kohya_ss/wiki"
+    },
+    {
+      "id": "ai-toolkit",
+      "display_name": "AI Toolkit",
+      "category": "fine-tuning",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/ai-toolkit:2026-09@sha256:695c64101260e0ff0db2fd008ca1be1de21e431f30b28de6573f4afefccd87e5",
+      "container_disk_gb": 100,
+      "min_vram_gb": 24,
+      "min_cuda": 12.8,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 8675, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true },
+        { "key": "AI_TOOLKIT_AUTH", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "Train FLUX and video-model LoRAs from a sleek web UI \u2014 the community favorite for FLUX.1 fine-tunes, by ostris.",
+      "includes": ["AI Toolkit trainer + web UI (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://github.com/ostris/ai-toolkit#readme"
+    },
+    {
+      "id": "llama-factory",
+      "display_name": "LLaMA-Factory",
+      "category": "fine-tuning",
+      "kind": "service",
+      "image": "ghcr.io/gpuai-dev/llama-factory:2026-09@sha256:670bd8a1477498a29422f305c86aab8302bde6be7ebb57ddebc936d243e44305",
+      "container_disk_gb": 100,
+      "min_vram_gb": 24,
+      "min_cuda": 12.4,
+      "min_gpu_count": 1,
+      "ready_timeout_seconds": 600,
+      "ports": [
+        { "port": 7860, "protocol": "http", "primary": true },
+        { "port": 22, "protocol": "tcp", "primary": false }
+      ],
+      "env": [
+        { "key": "HF_TOKEN", "default": "", "user_overridable": true, "secret": true }
+      ],
+      "start_command": "",
+      "description": "Fine-tune 100+ LLMs from a friendly web GUI \u2014 LoRA, QLoRA, DPO, and full training with zero code, powered by LLaMA Board.",
+      "includes": ["LLaMA-Factory + LLaMA Board GUI (tracks upstream monthly)", "CUDA-matched PyTorch", "SSH + HTTPS tunnel access"],
+      "docs_url": "https://llamafactory.readthedocs.io"
+    }
+  ]
+}

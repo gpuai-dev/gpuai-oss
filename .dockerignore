@@ -1,0 +1,10 @@
+.git
+**/node_modules
+sdk
+mcp
+docs
+*.md
+!go.mod
+**/.env
+**/.env.*
+bin
