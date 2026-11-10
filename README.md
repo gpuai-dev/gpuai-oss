@@ -1,3 +1,12 @@
+<p align="center">
+  <a href="https://gpu.ai">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/gpuai-logo-dark.png">
+      <img src="docs/assets/gpuai-logo-light.png" alt="GPU.ai" width="300">
+    </picture>
+  </a>
+</p>
+
 # GPU.ai Open Source
 
 GPU.ai Open Source is a self-hostable server for provisioning GPU instances
